@@ -18,8 +18,8 @@ authRouter.post('/login', async (request, response) => {
   let user;
 
   try {
-    const [result] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    user = result[0];
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    user = result.rows[0];
   } catch (error) {
     response.status(500).send({ error: 'Database error' });
   }
@@ -40,8 +40,8 @@ authRouter.post('/signup', async (request, response) => {
   let user;
 
   try {
-    const [result] = await pool.query('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, passwordHash]);
-    user = { id: result.insertId, username, email };
+    const result = await pool.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING *', [username, email, passwordHash]);
+    user = { id: result.rows[0].id, username, email };
   } catch (error) {
     response.status(400).send({ error: 'Invalid email or password' });
     logger.error(`Signup failed with email ${email}. Error: ${error}`);
