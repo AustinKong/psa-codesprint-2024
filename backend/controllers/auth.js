@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const authRouter = require('express').Router();
 const logger = require('../utils/logger');
 const config = require('../utils/config');
-const pool = require('../utils/db');
+const User = require('../models/user');
 
 const generateToken = (user) => {
   return jwt.sign(user, config.SECRET);
@@ -18,18 +18,22 @@ authRouter.post('/login', async (request, response) => {
   let user;
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    user = result.rows[0];
+    const results = await User.findAll({
+      where: {
+        email: email
+      }
+    });
+    user = results[0].dataValues;
   } catch (error) {
     response.status(500).send({ error: 'Database error' });
   }
 
-  if (!user || user.password_hash !== hashPassword(password)) {
+  if (!user || user.passwordHash !== hashPassword(password)) {
     response.status(401).send({ error: 'Invalid email or password' });
     return;
   }
 
-  const token = generateToken({ id: user.user_id, username: user.username });
+  const token = generateToken({ id: user.id, username: user.username });
   response.status(200).send({ token, username: user.username });
   logger.info(`Login success with email ${email}`);
 });
@@ -40,8 +44,12 @@ authRouter.post('/signup', async (request, response) => {
   let user;
 
   try {
-    const result = await pool.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING *', [username, email, passwordHash]);
-    user = { id: result.rows[0].id, username, email };
+    const result = await User.create({
+      username: username,
+      email: email,
+      passwordHash: passwordHash
+    });
+    user = { id: result.dataValues.id, username, email };
   } catch (error) {
     response.status(400).send({ error: 'Invalid email or password' });
     logger.error(`Signup failed with email ${email}. Error: ${error}`);
