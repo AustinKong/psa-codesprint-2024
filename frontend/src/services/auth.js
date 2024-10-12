@@ -4,19 +4,32 @@ const BASE_URL = '/api/auth';
 const login = async (email, password) => {
   try {
     const response = await axios.post(`${BASE_URL}/login`, { email, password });
-    console.log(response.data);
-    return response.data;
+    return {
+      data: response.data,
+      success: true,
+    };
+    // TODO: Save user data in a redux store
   } catch (error) {
-    return error.response.data;
+    return {
+      data: error.response.data,
+      success: false,
+    };
   }
 };
 
 const signup = async (username, email, password) => {
   try {
     const response = await axios.post(`${BASE_URL}/signup`, { username, email, password });
-    return response.data;
+    return {
+      data: response.data,
+      success: true,
+    };
+    // TODO: Save user data in a redux store
   } catch (error) {
-    return error.response.data;
+    return {
+      data: error.response.data,
+      success: true,
+    };
   }
 };
 
